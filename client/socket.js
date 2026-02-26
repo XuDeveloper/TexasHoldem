@@ -1,9 +1,8 @@
 import { io } from 'socket.io-client';
 
-// Socket.io client wrapper
+// Socket.io client - auto-connects to the server
 const socket = io();
 
-// Connection status
 socket.on('connect', () => {
     console.log('🃏 Connected to server:', socket.id);
 });

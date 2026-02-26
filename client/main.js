@@ -20,9 +20,12 @@ export function navigateTo(pageName, data = {}) {
 }
 
 // ---- Initialize ----
-// Pages will be registered by their modules
-// Start with lobby page
-import('./pages/lobby.js').then(() => {
+// Register all pages
+Promise.all([
+    import('./pages/lobby.js'),
+    import('./pages/room.js'),
+    import('./pages/game.js'),
+]).then(() => {
     navigateTo('lobby');
 });
 
