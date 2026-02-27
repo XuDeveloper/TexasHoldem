@@ -4,11 +4,27 @@
 echo "🃏 Texas Hold'em Poker"
 echo "======================"
 
-# Install dependencies if needed
-if [ ! -d "node_modules" ]; then
-  echo "📦 Installing dependencies..."
-  npm install
+# Check for Node.js
+if ! command -v node &> /dev/null; then
+    echo "❌ 错误: 未找到 Node.js"
+    echo "此项目需要安装 Node.js 才能运行。请访问 https://nodejs.org/ 下载安装。"
+    exit 1
 fi
+
+# Check for npm
+if ! command -v npm &> /dev/null; then
+    echo "❌ 错误: 未找到 npm (Node Package Manager)"
+    exit 1
+fi
+
+# Print versions
+NODE_VERSION=$(node -v)
+NPM_VERSION=$(npm -v)
+echo "📦 环境检查: Node $NODE_VERSION, npm v$NPM_VERSION"
+
+# Always ensure dependencies are up to date
+echo "🔄 检查并安装依赖..."
+npm install --no-fund --no-audit
 
 # Build frontend
 echo "🔨 Building frontend..."
