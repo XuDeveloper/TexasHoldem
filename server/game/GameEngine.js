@@ -69,6 +69,7 @@ export class GameEngine {
                 bet: 0,
                 totalBet: 0,
                 status: PlayerStatus.ACTIVE,
+                hasActed: false,
             }));
 
         if (this.playerStates.length < 2) {
@@ -180,6 +181,12 @@ export class GameEngine {
                 const raiseAmount = Math.min(raiseTotal - playerState.bet, player.chips);
                 this.placeBet(playerState, raiseAmount);
                 this.currentBet = playerState.bet;
+                // When someone raises, everyone else needs to act again
+                for (const ps of this.playerStates) {
+                    if (ps.id !== playerId && ps.status === PlayerStatus.ACTIVE) {
+                        ps.hasActed = false;
+                    }
+                }
                 if (player.chips === 0) {
                     playerState.status = PlayerStatus.ALLIN;
                 }
@@ -191,6 +198,12 @@ export class GameEngine {
                 this.placeBet(playerState, allInAmount);
                 if (playerState.bet > this.currentBet) {
                     this.currentBet = playerState.bet;
+                    // When someone raises via all-in, everyone else needs to act again
+                    for (const ps of this.playerStates) {
+                        if (ps.id !== playerId && ps.status === PlayerStatus.ACTIVE) {
+                            ps.hasActed = false;
+                        }
+                    }
                 }
                 playerState.status = PlayerStatus.ALLIN;
                 break;
@@ -200,6 +213,7 @@ export class GameEngine {
                 throw new Error(`Unknown action: ${action.type}`);
         }
 
+        playerState.hasActed = true;
         this.lastAction = { playerId, ...action };
 
         // Check if only one player remains (all others folded)
@@ -245,17 +259,18 @@ export class GameEngine {
         // If 0 or 1 active players, round is complete
         if (activePlayers.length <= 1) return true;
 
-        // All active players must have matched the current bet
-        return activePlayers.every(ps => ps.bet === this.currentBet);
+        // All active players must have acted AND matched the current bet
+        return activePlayers.every(ps => ps.hasActed && ps.bet === this.currentBet);
     }
 
     /**
      * Advance to the next phase.
      */
     advancePhase() {
-        // Reset bets for new round
+        // Reset bets and hasActed for new betting round
         for (const ps of this.playerStates) {
             ps.bet = 0;
+            ps.hasActed = false;
         }
         this.currentBet = 0;
 
