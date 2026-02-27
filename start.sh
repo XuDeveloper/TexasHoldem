@@ -14,6 +14,14 @@ fi
 echo "🔨 Building frontend..."
 npx vite build
 
+# Kill any existing process on port 3000
+PID=$(lsof -ti:3000 2>/dev/null)
+if [ -n "$PID" ]; then
+  echo "🔄 正在关闭旧的服务器进程 (PID: $PID)..."
+  kill $PID 2>/dev/null
+  sleep 1
+fi
+
 # Start server
 echo ""
 echo "🚀 Starting server..."
