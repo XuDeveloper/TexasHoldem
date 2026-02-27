@@ -545,6 +545,12 @@ input {
   letter-spacing: 2px;
 }
 
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* Table Wrapper */
 .table-wrapper {
   flex: 1;
@@ -796,27 +802,29 @@ input {
   border-radius: 3px;
 }
 
+/* Bottom Section: hand + actions stacked */
+.bottom-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(212, 175, 55, 0.2);
+  z-index: 20;
+}
+
 /* My Hand */
 .my-hand {
   display: flex;
   gap: 12px;
   justify-content: center;
-  padding: 8px 0;
-  position: relative;
-  z-index: 5;
+  padding: 10px 0 4px;
 }
 
 /* Action Panel */
 .action-panel {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(10px);
-  padding: 12px 20px;
-  z-index: 20;
-  border-top: 1px solid rgba(212, 175, 55, 0.2);
+  width: 100%;
+  padding: 8px 20px 12px;
 }
 
 .action-buttons {
@@ -989,6 +997,96 @@ input {
   z-index: 200;
   border: 1px solid rgba(212, 175, 55, 0.2);
   animation: fadeIn 0.3s ease-out;
+}
+
+/* ==============================
+   HAND RANKINGS MODAL
+   ============================== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+}
+
+.modal-panel {
+  max-width: 420px;
+  width: 92%;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.modal-header h2 {
+  font-size: 1.3rem;
+  margin: 0;
+}
+
+.modal-close {
+  font-size: 1.5rem;
+  color: var(--text-muted);
+  background: none;
+  padding: 4px 8px;
+}
+
+.modal-close:hover {
+  color: var(--text-primary);
+}
+
+.hand-rankings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ranking-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--gold);
+  transition: background 0.2s;
+}
+
+.ranking-item:hover {
+  background: rgba(212, 175, 55, 0.08);
+}
+
+.ranking-num {
+  color: var(--gold);
+  font-weight: 700;
+  font-size: 0.85rem;
+  min-width: 22px;
+  text-align: center;
+}
+
+.ranking-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 100px;
+}
+
+.ranking-desc {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.ranking-footer {
+  margin-top: var(--spacing-md);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  text-align: center;
 }
 
 /* ---- Responsive ---- */
