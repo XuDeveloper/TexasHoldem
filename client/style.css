@@ -825,6 +825,8 @@ input {
 .action-panel {
   width: 100%;
   padding: 8px 20px 12px;
+  min-height: 140px;
+  /* Pre-allocate max possible height to prevent layout shift */
   transition: opacity 0.15s ease;
 }
 
