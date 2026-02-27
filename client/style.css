@@ -825,6 +825,15 @@ input {
 .action-panel {
   width: 100%;
   padding: 8px 20px 12px;
+  transition: opacity 0.15s ease;
+}
+
+.action-panel-hidden {
+  visibility: hidden;
+  height: 0;
+  padding: 0;
+  overflow: hidden;
+  opacity: 0;
 }
 
 .action-buttons {

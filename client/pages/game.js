@@ -9,6 +9,7 @@ registerPage('game', (container, { room, gameState, myName }) => {
   let currentRoom = room;
   let showdownHands = {};
   let timerInterval = null;
+  let renderedCardCount = 0;
 
   container.innerHTML = `
     <div class="game-container">
@@ -45,7 +46,7 @@ registerPage('game', (container, { room, gameState, myName }) => {
         <div id="my-hand" class="my-hand"></div>
 
         <!-- Action Controls -->
-        <div id="action-panel" class="action-panel hidden">
+        <div id="action-panel" class="action-panel">
           <div class="action-buttons">
             <button id="btn-fold" class="btn btn-danger action-btn">弃牌</button>
             <button id="btn-check" class="btn btn-secondary action-btn hidden">过牌</button>
@@ -65,6 +66,7 @@ registerPage('game', (container, { room, gameState, myName }) => {
               <button class="btn btn-small raise-preset" data-mult="1">底池</button>
               <button class="btn btn-small raise-preset" data-mult="2">2× 底池</button>
             </div>
+            <button id="btn-raise-confirm" class="btn btn-primary btn-small">确认加注</button>
           </div>
           <!-- Timer -->
           <div id="turn-timer" class="turn-timer hidden">
@@ -155,10 +157,12 @@ registerPage('game', (container, { room, gameState, myName }) => {
   document.getElementById('btn-raise').addEventListener('click', () => {
     const controls = document.getElementById('raise-controls');
     controls.classList.toggle('hidden');
-    if (!controls.classList.contains('hidden')) {
-      const slider = document.getElementById('raise-slider');
-      sendAction('raise', parseInt(slider.value));
-    }
+  });
+
+  document.getElementById('btn-raise-confirm').addEventListener('click', () => {
+    const slider = document.getElementById('raise-slider');
+    sendAction('raise', parseInt(slider.value));
+    document.getElementById('raise-controls').classList.add('hidden');
   });
 
   const slider = document.getElementById('raise-slider');
@@ -221,15 +225,27 @@ registerPage('game', (container, { room, gameState, myName }) => {
     const el = document.getElementById('community-cards');
     if (!cards || cards.length === 0) {
       el.innerHTML = '<div class="card-placeholder"></div>'.repeat(5);
+      renderedCardCount = 0;
       return;
     }
 
-    el.innerHTML = cards.map((card, i) => `
-      <div class="card card-face animate-deal" style="animation-delay: ${i * 0.1}s">
+    // Only re-render if new cards were dealt
+    if (cards.length === renderedCardCount) return;
+
+    let html = '';
+    cards.forEach((card, i) => {
+      const isNew = i >= renderedCardCount;
+      html += `
+      <div class="card card-face${isNew ? ' animate-deal' : ''}" ${isNew ? `style="animation-delay: ${(i - renderedCardCount) * 0.1}s"` : ''}>
         <span class="card-rank ${getCardColor(card.suit)}">${card.rank}</span>
         <span class="card-suit ${getCardColor(card.suit)}">${getSuitSymbol(card.suit)}</span>
       </div>
-    `).join('') + '<div class="card-placeholder"></div>'.repeat(5 - cards.length);
+    `;
+    });
+    html += '<div class="card-placeholder"></div>'.repeat(5 - cards.length);
+
+    el.innerHTML = html;
+    renderedCardCount = cards.length;
   }
 
   function renderMyHand(hand) {
@@ -287,11 +303,11 @@ registerPage('game', (container, { room, gameState, myName }) => {
     const isMyTurn = state.currentPlayerId === socket.id && state.phase !== 'showdown';
 
     if (!isMyTurn) {
-      panel.classList.add('hidden');
+      panel.classList.add('action-panel-hidden');
       return;
     }
 
-    panel.classList.remove('hidden');
+    panel.classList.remove('action-panel-hidden');
     document.getElementById('raise-controls').classList.add('hidden');
 
     const myState = state.playerStates.find(ps => ps.id === socket.id);
@@ -387,11 +403,11 @@ registerPage('game', (container, { room, gameState, myName }) => {
   function sendAction(type, amount) {
     clearInterval(timerInterval);
     document.getElementById('turn-timer')?.classList.add('hidden');
-    document.getElementById('action-panel')?.classList.add('hidden');
+    document.getElementById('action-panel')?.classList.add('action-panel-hidden');
     socket.emit('player-action', { type, amount }, (res) => {
       if (!res.success) {
         showToast(`错误: ${res.error}`);
-        document.getElementById('action-panel')?.classList.remove('hidden');
+        document.getElementById('action-panel')?.classList.remove('action-panel-hidden');
       }
     });
   }
