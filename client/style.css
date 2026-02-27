@@ -830,9 +830,7 @@ input {
 
 .action-panel-hidden {
   visibility: hidden;
-  height: 0;
-  padding: 0;
-  overflow: hidden;
+  pointer-events: none;
   opacity: 0;
 }
 

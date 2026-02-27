@@ -342,7 +342,7 @@ registerPage('game', (container, { room, gameState, myName }) => {
     const winnerNames = winners.map(w => `${w.name} 赢得 $${w.amount}`).join('，');
     title.innerHTML = `🏆 ${winnerNames}`;
 
-    handsEl.innerHTML = winners.map(w => `
+    let html = winners.map(w => `
       <div class="result-winner">
         <span class="result-name text-gold">${w.name}</span>
         <span class="result-hand-name">${w.handName}</span>
@@ -350,11 +350,22 @@ registerPage('game', (container, { room, gameState, myName }) => {
       </div>
     `).join('');
 
+    // Add community cards if they exist
+    if (currentState && currentState.communityCards && currentState.communityCards.length > 0) {
+      html += '<div class="result-divider"></div>';
+      html += '<div class="result-community-label" style="text-align:center; color:var(--text-secondary); font-size:0.9rem; margin-bottom:8px;">共用牌</div>';
+      html += '<div class="result-community-cards" style="display:flex; justify-content:center; gap:8px; margin-bottom:15px;">';
+      html += currentState.communityCards.map(c => `
+        <span class="card card-mini ${getCardColor(c.suit)}">${c.rank}${getSuitSymbol(c.suit)}</span>
+      `).join('');
+      html += '</div>';
+    }
+
     if (hands && Object.keys(hands).length > 0) {
-      handsEl.innerHTML += '<div class="result-divider"></div>';
+      html += '<div class="result-divider"></div>';
       for (const [playerId, hand] of Object.entries(hands)) {
         const player = currentState.players.find(p => p.id === playerId);
-        handsEl.innerHTML += `
+        html += `
           <div class="result-hand-row">
             <span>${player?.name || '未知'}</span>
             <div class="result-cards">
@@ -365,6 +376,7 @@ registerPage('game', (container, { room, gameState, myName }) => {
       }
     }
 
+    handsEl.innerHTML = html;
     overlay.classList.remove('hidden');
   }
 
