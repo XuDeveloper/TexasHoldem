@@ -17,6 +17,26 @@ const io = new Server(httpServer, {
 
 // Serve static files in production
 app.use(express.static(join(__dirname, '..', 'dist')));
+app.use(express.json());
+
+import { verifyUser, createToken } from './auth.js';
+
+// Login API endpoint
+app.post('/api/login', (req, res) => {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+        return res.status(400).json({ success: false, error: 'Username and password required' });
+    }
+
+    const user = verifyUser(username, password);
+    if (!user) {
+        return res.status(401).json({ success: false, error: 'Invalid username or password' });
+    }
+
+    const token = createToken(user);
+    res.json({ success: true, token, user });
+});
 
 // Setup Socket.io event handlers
 setupSocketHandler(io);
