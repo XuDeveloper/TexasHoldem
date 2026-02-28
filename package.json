@@ -9,7 +9,8 @@
     "dev:server": "node --watch server/index.js",
     "build": "vite build",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "add-user": "node scripts/add-user.js"
   },
   "keywords": [
     "poker",
