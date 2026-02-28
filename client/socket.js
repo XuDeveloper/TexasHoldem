@@ -1,7 +1,9 @@
 import { io } from 'socket.io-client';
 
-// Socket.io client - auto-connects to the server
-const socket = io();
+// Socket.io client - do not auto-connect so we can set auth token first
+const socket = io({
+    autoConnect: false
+});
 
 socket.on('connect', () => {
     console.log('🃏 Connected to server:', socket.id);

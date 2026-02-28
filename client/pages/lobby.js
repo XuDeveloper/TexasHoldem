@@ -1,18 +1,21 @@
 import { registerPage, navigateTo, socket } from '../main.js';
 
 registerPage('lobby', (container) => {
+    // Get logged in user back
+    let userStr = localStorage.getItem('poker_user');
+    let user = userStr ? JSON.parse(userStr) : { name: 'Player' };
+
     container.innerHTML = `
     <div class="lobby-container animate-fade-in">
+      <div style="position: absolute; top: 15px; right: 20px; color: var(--text-secondary); display: flex; align-items: center; gap: 15px;">
+        <span>Welcome, <strong class="text-gold">${user.name}</strong></span>
+        <button id="btn-logout" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.8rem;">Logout</button>
+      </div>
       <div class="lobby-decoration">♠ ♥ ♦ ♣</div>
       <h1 class="lobby-title">德州扑克</h1>
       <p class="lobby-subtitle">和朋友一起在线玩扑克</p>
 
       <div class="lobby-form panel">
-        <div class="form-group">
-          <label for="nickname">你的昵称</label>
-          <input type="text" id="nickname" class="input" placeholder="输入你的名字" maxlength="12" autocomplete="off">
-        </div>
-
         <div id="lobby-buttons" class="lobby-actions">
           <button id="btn-create" class="btn btn-primary">创建房间</button>
           <button id="btn-show-join" class="btn btn-secondary">加入房间</button>
@@ -31,17 +34,22 @@ registerPage('lobby', (container) => {
 
         <div id="lobby-error" class="error-message hidden"></div>
       </div>
-
-      <p class="lobby-footer">无需登录 | 即开即玩 ♥</p>
     </div>
   `;
 
     // Elements
-    const nicknameInput = document.getElementById('nickname');
     const roomCodeInput = document.getElementById('room-code');
     const lobbyButtons = document.getElementById('lobby-buttons');
     const joinSection = document.getElementById('join-section');
     const errorMsg = document.getElementById('lobby-error');
+
+    // Logout
+    document.getElementById('btn-logout').addEventListener('click', () => {
+        localStorage.removeItem('poker_token');
+        localStorage.removeItem('poker_user');
+        socket.disconnect();
+        navigateTo('login');
+    });
 
     // Show join section
     document.getElementById('btn-show-join').addEventListener('click', () => {
@@ -57,12 +65,9 @@ registerPage('lobby', (container) => {
 
     // Create room
     document.getElementById('btn-create').addEventListener('click', () => {
-        const name = nicknameInput.value.trim();
-        if (!name) return showError('请输入昵称');
-
-        socket.emit('create-room', { name }, (res) => {
+        socket.emit('create-room', { name: user.name }, (res) => {
             if (res.success) {
-                navigateTo('room', { room: res.room, isHost: true, myName: name });
+                navigateTo('room', { room: res.room, isHost: true, myName: user.name });
             } else {
                 showError(res.error);
             }
@@ -71,14 +76,12 @@ registerPage('lobby', (container) => {
 
     // Join room
     document.getElementById('btn-join').addEventListener('click', () => {
-        const name = nicknameInput.value.trim();
         const code = roomCodeInput.value.trim().toUpperCase();
-        if (!name) return showError('请输入昵称');
         if (!code || code.length < 6) return showError('请输入有效的房间代码');
 
-        socket.emit('join-room', { code, name }, (res) => {
+        socket.emit('join-room', { code, name: user.name }, (res) => {
             if (res.success) {
-                navigateTo('room', { room: res.room, isHost: false, myName: name });
+                navigateTo('room', { room: res.room, isHost: false, myName: user.name });
             } else {
                 showError(res.error);
             }
@@ -86,11 +89,6 @@ registerPage('lobby', (container) => {
     });
 
     // Enter key support
-    nicknameInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !joinSection.classList.contains('hidden')) {
-            document.getElementById('btn-join').click();
-        }
-    });
     roomCodeInput?.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') document.getElementById('btn-join').click();
     });

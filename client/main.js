@@ -22,11 +22,28 @@ export function navigateTo(pageName, data = {}) {
 // ---- Initialize ----
 // Register all pages
 Promise.all([
+    import('./pages/login.js').then(m => registerPage('login', m.initLogin)),
     import('./pages/lobby.js'),
     import('./pages/room.js'),
     import('./pages/game.js'),
 ]).then(() => {
-    navigateTo('lobby');
+    const token = localStorage.getItem('poker_token');
+    if (!token) {
+        navigateTo('login');
+    } else {
+        socket.auth = { token };
+        socket.connect();
+        navigateTo('lobby');
+    }
+});
+
+// Automatically handle token invalidation server-side
+socket.on('connect_error', (err) => {
+    if (err.message === 'Authentication error') {
+        localStorage.removeItem('poker_token');
+        localStorage.removeItem('poker_user');
+        navigateTo('login');
+    }
 });
 
 export { socket };
