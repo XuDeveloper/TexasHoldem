@@ -6,11 +6,12 @@ registerPage('lobby', (container) => {
     let user = userStr ? JSON.parse(userStr) : { name: 'Player' };
 
     container.innerHTML = `
+    <div style="position: fixed; top: 20px; right: 25px; z-index: 100; color: var(--text-secondary); display: flex; align-items: center; gap: 15px;" class="animate-fade-in">
+      <span>Welcome, <strong class="text-gold">${user.name}</strong></span>
+      <button id="btn-logout" class="btn btn-secondary" style="padding: 6px 14px; font-size: 0.85rem; letter-spacing: 1px;">Logout</button>
+    </div>
+
     <div class="lobby-container animate-fade-in">
-      <div style="position: absolute; top: 15px; right: 20px; color: var(--text-secondary); display: flex; align-items: center; gap: 15px;">
-        <span>Welcome, <strong class="text-gold">${user.name}</strong></span>
-        <button id="btn-logout" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.8rem;">Logout</button>
-      </div>
       <div class="lobby-decoration">♠ ♥ ♦ ♣</div>
       <h1 class="lobby-title">德州扑克</h1>
       <p class="lobby-subtitle">和朋友一起在线玩扑克</p>
