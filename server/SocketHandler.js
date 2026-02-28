@@ -5,6 +5,7 @@
 
 import { RoomManager } from './RoomManager.js';
 import { decideAction } from './game/AIPlayer.js';
+import { verifyToken } from './auth.js';
 
 const roomManager = new RoomManager();
 
@@ -17,8 +18,20 @@ const DISCONNECT_TIMEOUT = 60000; // 60 seconds
 const TURN_TIMEOUT = 30000; // 30 seconds
 
 export function setupSocketHandler(io) {
+    // ---- Authentication Middleware ----
+    io.use((socket, next) => {
+        const token = socket.handshake.auth.token;
+        const user = verifyToken(token);
+        if (!user) {
+            return next(new Error('Authentication error'));
+        }
+        // Attach user info to the socket instance
+        socket.user = user;
+        next();
+    });
+
     io.on('connection', (socket) => {
-        console.log('Player connected:', socket.id);
+        console.log(`Player connected: ${socket.id} (User: ${socket.user.username})`);
 
         // ---- Room Events ----
 
