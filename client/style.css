@@ -201,6 +201,55 @@ input {
   color: var(--text-muted);
 }
 
+/* ---- Login Specific Inputs ---- */
+.login-input-group {
+  position: relative;
+  width: 100%;
+  margin-top: 20px;
+}
+
+.login-input-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gold);
+  font-size: 1.2rem;
+  pointer-events: none;
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.login-input {
+  width: 100%;
+  padding: 16px 16px 16px 48px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 2px solid rgba(212, 175, 55, 0.2);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.login-input:focus {
+  border-color: var(--gold);
+  background: rgba(0, 0, 0, 0.6);
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.2), inset 0 2px 10px rgba(0, 0, 0, 0.5);
+  outline: none;
+}
+
+.login-input:focus+.login-input-icon {
+  opacity: 1;
+  text-shadow: 0 0 8px rgba(212, 175, 55, 0.5);
+}
+
+.login-input::placeholder {
+  color: #5a5a5a;
+  letter-spacing: normal;
+}
+
 /* ---- Panel ---- */
 .panel {
   background: rgba(15, 45, 26, 0.8);
