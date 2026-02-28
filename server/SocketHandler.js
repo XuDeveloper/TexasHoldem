@@ -385,10 +385,13 @@ function handleShowdown(io, room) {
         }
     }
 
+    const isGameOver = room.players.some(p => p.chips <= 0);
+
     io.to(room.id).emit('game-result', {
         winners: state.winners,
         hands,
         communityCards: state.communityCards,
+        isGameOver,
     });
 }
 

@@ -124,9 +124,9 @@ registerPage('game', (container, { room, gameState, myName }) => {
     renderMyHand(hand);
   });
 
-  socket.on('game-result', ({ winners, hands, communityCards }) => {
+  socket.on('game-result', ({ winners, hands, communityCards, isGameOver }) => {
     showdownHands = hands;
-    showGameResult(winners, hands);
+    showGameResult(winners, hands, isGameOver);
   });
 
   socket.on('turn-timer', ({ playerId, duration }) => {
@@ -180,12 +180,7 @@ registerPage('game', (container, { room, gameState, myName }) => {
     });
   });
 
-  document.getElementById('btn-next-round').addEventListener('click', () => {
-    document.getElementById('game-result').classList.add('hidden');
-    socket.emit('next-round', (res) => {
-      if (!res.success) alert(res.error);
-    });
-  });
+  // btn-next-round click logic is handled dynamically in showGameResult
 
   document.getElementById('btn-leave-game').addEventListener('click', () => {
     cleanupListeners();
@@ -334,10 +329,33 @@ registerPage('game', (container, { room, gameState, myName }) => {
     document.getElementById('raise-value').textContent = minRaise;
   }
 
-  function showGameResult(winners, hands) {
+  function showGameResult(winners, hands, isGameOver) {
     const overlay = document.getElementById('game-result');
     const title = document.getElementById('result-title');
     const handsEl = document.getElementById('result-hands');
+
+    const nextBtn = document.getElementById('btn-next-round');
+    const newBtn = nextBtn.cloneNode(true);
+    nextBtn.parentNode.replaceChild(newBtn, nextBtn);
+
+    if (isGameOver) {
+      newBtn.textContent = '游戏结束 - 返回大厅';
+      newBtn.className = 'btn btn-danger';
+      newBtn.addEventListener('click', () => {
+        overlay.classList.add('hidden');
+        cleanupListeners();
+        socket.emit('leave-room', () => navigateTo('lobby'));
+      });
+    } else {
+      newBtn.textContent = '下一局';
+      newBtn.className = 'btn btn-primary';
+      newBtn.addEventListener('click', () => {
+        overlay.classList.add('hidden');
+        socket.emit('next-round', (res) => {
+          if (!res.success) showToast(`错误: ${res.error}`);
+        });
+      });
+    }
 
     const winnerNames = winners.map(w => `${w.name} 赢得 $${w.amount}`).join('，');
     title.innerHTML = `🏆 ${winnerNames}`;

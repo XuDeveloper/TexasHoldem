@@ -24,12 +24,7 @@ export const PlayerStatus = {
 
 export class GameEngine {
     constructor(players, options = {}) {
-        this.players = players.map(p => ({
-            id: p.id,
-            name: p.name,
-            chips: p.chips,
-            isAI: p.isAI || false,
-        }));
+        this.players = players;
 
         this.smallBlind = options.smallBlind || 5;
         this.bigBlind = options.bigBlind || 10;

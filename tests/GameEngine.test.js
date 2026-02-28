@@ -3,13 +3,14 @@ import { GameEngine, Phase, PlayerStatus } from '../server/game/GameEngine.js';
 
 describe('GameEngine', () => {
     let engine;
-    const players = [
-        { id: 'p1', name: 'Alice', chips: 1000 },
-        { id: 'p2', name: 'Bob', chips: 1000 },
-        { id: 'p3', name: 'Charlie', chips: 1000 },
-    ];
+    let players;
 
     beforeEach(() => {
+        players = [
+            { id: 'p1', name: 'Alice', chips: 1000 },
+            { id: 'p2', name: 'Bob', chips: 1000 },
+            { id: 'p3', name: 'Charlie', chips: 1000 },
+        ];
         engine = new GameEngine(players, { dealerIndex: 0 });
     });
 
