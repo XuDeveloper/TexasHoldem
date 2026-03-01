@@ -84,12 +84,15 @@ export class RoomManager {
         const aiNames = ['Alice AI', 'Bob AI', 'Charlie AI', 'Diana AI', 'Eve AI', 'Frank AI', 'Grace AI', 'Henry AI'];
         const aiName = aiNames[(room.aiCounter - 1) % aiNames.length];
 
+        const personality = Math.random() > 0.5 ? 'aggressive' : 'conservative';
+
         const ai = {
             id: `ai-${room.id}-${room.aiCounter}`,
             name: aiName,
             chips: 1000,
             isAI: true,
             isConnected: true,
+            personality: personality,
         };
         room.players.push(ai);
         return room;

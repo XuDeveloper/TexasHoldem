@@ -921,8 +921,40 @@ input {
 }
 
 .raise-slider {
-  width: 200px;
+  flex: 1;
+  max-width: 200px;
   accent-color: var(--gold);
+}
+
+.raise-input {
+  width: 70px;
+  padding: 6px 4px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  color: var(--gold);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-align: center;
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.raise-input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+}
+
+/* Hide number input spinners */
+.raise-input::-webkit-outer-spin-button,
+.raise-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.raise-input[type=number] {
+  -moz-appearance: textfield;
 }
 
 .raise-value {

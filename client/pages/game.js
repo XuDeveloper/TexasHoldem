@@ -15,11 +15,11 @@ registerPage('game', (container, { room, gameState, myName }) => {
     <div class="game-container">
       <!-- Top Bar -->
       <div class="game-topbar">
-        <span class="game-room-code">房间: ${room.id}</span>
+        <span class="game-room-code">Room: ${room.id}</span>
         <span class="game-phase" id="game-phase"></span>
         <div class="topbar-right">
-          <button id="btn-help" class="btn-icon" title="牌型说明">❓</button>
-          <button id="btn-leave-game" class="btn btn-danger btn-small">离开</button>
+          <button id="btn-help" class="btn-icon" title="Hand Rankings">❓</button>
+          <button id="btn-leave-game" class="btn btn-danger btn-small">Leave</button>
         </div>
       </div>
 
@@ -31,7 +31,7 @@ registerPage('game', (container, { room, gameState, myName }) => {
             <div id="community-cards" class="community-cards"></div>
             <!-- Pot -->
             <div id="pot-display" class="pot-display">
-              <span class="pot-label">底池</span>
+              <span class="pot-label">Pot</span>
               <span id="pot-amount" class="pot-amount">0</span>
             </div>
           </div>
@@ -48,25 +48,25 @@ registerPage('game', (container, { room, gameState, myName }) => {
         <!-- Action Controls -->
         <div id="action-panel" class="action-panel">
           <div class="action-buttons">
-            <button id="btn-fold" class="btn btn-danger action-btn">弃牌</button>
-            <button id="btn-check" class="btn btn-secondary action-btn hidden">过牌</button>
+            <button id="btn-fold" class="btn btn-danger action-btn">Fold</button>
+            <button id="btn-check" class="btn btn-secondary action-btn hidden">Check</button>
             <button id="btn-call" class="btn btn-secondary action-btn hidden">
-              跟注 <span id="call-amount"></span>
+              Call <span id="call-amount"></span>
             </button>
             <button id="btn-raise" class="btn btn-primary action-btn">
-              加注
+              Raise
             </button>
-            <button id="btn-allin" class="btn btn-primary action-btn allin-btn">全下</button>
+            <button id="btn-allin" class="btn btn-primary action-btn allin-btn">All-In</button>
           </div>
           <div class="raise-controls hidden" id="raise-controls">
-            <input type="range" id="raise-slider" class="raise-slider" min="0" max="1000" value="20">
-            <span id="raise-value" class="raise-value">20</span>
+            <input type="number" id="raise-input" class="raise-input" min="5" step="5" value="20" style="width: 80px; text-align: center;">
+            <input type="range" id="raise-slider" class="raise-slider" min="5" max="1000" step="5" value="20">
             <div class="raise-presets">
-              <button class="btn btn-small raise-preset" data-mult="0.5">½ 底池</button>
-              <button class="btn btn-small raise-preset" data-mult="1">底池</button>
-              <button class="btn btn-small raise-preset" data-mult="2">2× 底池</button>
+              <button class="btn btn-small raise-preset" data-mult="0.5">½ Pot</button>
+              <button class="btn btn-small raise-preset" data-mult="1">Pot</button>
+              <button class="btn btn-small raise-preset" data-mult="2">2× Pot</button>
             </div>
-            <button id="btn-raise-confirm" class="btn btn-primary btn-small">确认加注</button>
+            <button id="btn-raise-confirm" class="btn btn-primary btn-small">Confirm Raise</button>
           </div>
           <!-- Timer -->
           <div id="turn-timer" class="turn-timer hidden">
@@ -81,7 +81,7 @@ registerPage('game', (container, { room, gameState, myName }) => {
         <div class="result-panel panel animate-fade-in">
           <h2 id="result-title" class="result-title"></h2>
           <div id="result-hands" class="result-hands"></div>
-          <button id="btn-next-round" class="btn btn-primary">下一局</button>
+          <button id="btn-next-round" class="btn btn-primary">Next Round</button>
         </div>
       </div>
 
@@ -89,22 +89,22 @@ registerPage('game', (container, { room, gameState, myName }) => {
       <div id="hand-rankings-modal" class="modal-overlay hidden">
         <div class="modal-panel panel animate-fade-in">
           <div class="modal-header">
-            <h2 class="text-gold">🃏 牌型大小</h2>
+            <h2 class="text-gold">🃏 Hand Rankings</h2>
             <button id="btn-close-help" class="btn-icon modal-close">✕</button>
           </div>
           <div class="hand-rankings-list">
-            <div class="ranking-item"><span class="ranking-num">1</span><span class="ranking-name">皇家同花顺</span><span class="ranking-desc">A K Q J 10 同花色</span></div>
-            <div class="ranking-item"><span class="ranking-num">2</span><span class="ranking-name">同花顺</span><span class="ranking-desc">五张连续同花色</span></div>
-            <div class="ranking-item"><span class="ranking-num">3</span><span class="ranking-name">四条</span><span class="ranking-desc">四张相同点数</span></div>
-            <div class="ranking-item"><span class="ranking-num">4</span><span class="ranking-name">葫芦</span><span class="ranking-desc">三条 + 一对</span></div>
-            <div class="ranking-item"><span class="ranking-num">5</span><span class="ranking-name">同花</span><span class="ranking-desc">五张相同花色</span></div>
-            <div class="ranking-item"><span class="ranking-num">6</span><span class="ranking-name">顺子</span><span class="ranking-desc">五张连续点数</span></div>
-            <div class="ranking-item"><span class="ranking-num">7</span><span class="ranking-name">三条</span><span class="ranking-desc">三张相同点数</span></div>
-            <div class="ranking-item"><span class="ranking-num">8</span><span class="ranking-name">两对</span><span class="ranking-desc">两组对子</span></div>
-            <div class="ranking-item"><span class="ranking-num">9</span><span class="ranking-name">一对</span><span class="ranking-desc">两张相同点数</span></div>
-            <div class="ranking-item"><span class="ranking-num">10</span><span class="ranking-name">高牌</span><span class="ranking-desc">无任何组合</span></div>
+            <div class="ranking-item"><span class="ranking-num">1</span><span class="ranking-name">Royal Flush</span><span class="ranking-desc">A K Q J 10 of same suit</span></div>
+            <div class="ranking-item"><span class="ranking-num">2</span><span class="ranking-name">Straight Flush</span><span class="ranking-desc">Five consecutive cards of same suit</span></div>
+            <div class="ranking-item"><span class="ranking-num">3</span><span class="ranking-name">Four of a Kind</span><span class="ranking-desc">Four cards of same rank</span></div>
+            <div class="ranking-item"><span class="ranking-num">4</span><span class="ranking-name">Full House</span><span class="ranking-desc">Three of a kind + One pair</span></div>
+            <div class="ranking-item"><span class="ranking-num">5</span><span class="ranking-name">Flush</span><span class="ranking-desc">Five cards of same suit</span></div>
+            <div class="ranking-item"><span class="ranking-num">6</span><span class="ranking-name">Straight</span><span class="ranking-desc">Five consecutive cards</span></div>
+            <div class="ranking-item"><span class="ranking-num">7</span><span class="ranking-name">Three of a Kind</span><span class="ranking-desc">Three cards of same rank</span></div>
+            <div class="ranking-item"><span class="ranking-num">8</span><span class="ranking-name">Two Pair</span><span class="ranking-desc">Two pairs of same rank</span></div>
+            <div class="ranking-item"><span class="ranking-num">9</span><span class="ranking-name">One Pair</span><span class="ranking-desc">Two cards of same rank</span></div>
+            <div class="ranking-item"><span class="ranking-num">10</span><span class="ranking-name">High Card</span><span class="ranking-desc">No combination</span></div>
           </div>
-          <p class="ranking-footer">从上到下牌力递减，排名靠前的牌型更大</p>
+          <p class="ranking-footer">Rankings decrease from top to bottom</p>
         </div>
       </div>
     </div>
@@ -140,7 +140,7 @@ registerPage('game', (container, { room, gameState, myName }) => {
   });
 
   socket.on('game-ended', () => {
-    alert('游戏结束 - 没有足够的玩家继续');
+    alert('Game Ended - Not enough players to continue');
     navigateTo('lobby');
   });
 
@@ -160,23 +160,33 @@ registerPage('game', (container, { room, gameState, myName }) => {
   });
 
   document.getElementById('btn-raise-confirm').addEventListener('click', () => {
-    const slider = document.getElementById('raise-slider');
-    sendAction('raise', parseInt(slider.value));
+    const raiseInput = document.getElementById('raise-input');
+    sendAction('raise', parseInt(raiseInput.value));
     document.getElementById('raise-controls').classList.add('hidden');
   });
 
   const slider = document.getElementById('raise-slider');
+  const raiseInput = document.getElementById('raise-input');
+
   slider.addEventListener('input', () => {
-    document.getElementById('raise-value').textContent = slider.value;
+    raiseInput.value = slider.value;
+  });
+
+  raiseInput.addEventListener('input', () => {
+    let val = parseInt(raiseInput.value) || 0;
+    if (val < parseInt(slider.min)) val = parseInt(slider.min);
+    if (val > parseInt(slider.max)) val = parseInt(slider.max);
+    slider.value = val;
   });
 
   document.querySelectorAll('.raise-preset').forEach(btn => {
     btn.addEventListener('click', () => {
       const mult = parseFloat(btn.dataset.mult);
       const potAmount = currentState.pot || 0;
-      const value = Math.max(currentState.currentBet * 2, Math.floor(potAmount * mult));
+      let value = Math.max(currentState.currentBet * 2, Math.floor(potAmount * mult));
+      value = Math.floor(value / 5) * 5; // Round to nearest 5
       slider.value = value;
-      document.getElementById('raise-value').textContent = value;
+      raiseInput.value = value;
     });
   });
 
@@ -205,8 +215,8 @@ registerPage('game', (container, { room, gameState, myName }) => {
   function updateGameDisplay(state) {
     const phaseEl = document.getElementById('game-phase');
     const phaseNames = {
-      preflop: '翻牌前', flop: '翻牌', turn: '转牌',
-      river: '河牌', showdown: '摊牌'
+      preflop: 'Pre-Flop', flop: 'Flop', turn: 'Turn',
+      river: 'River', showdown: 'Showdown'
     };
     phaseEl.textContent = phaseNames[state.phase] || state.phase;
 
@@ -285,8 +295,8 @@ registerPage('game', (container, { room, gameState, myName }) => {
           <div class="seat-name">${player.name}</div>
           <div class="seat-chips">$${player.chips}</div>
           ${ps?.bet > 0 ? `<div class="seat-bet">$${ps.bet}</div>` : ''}
-          ${isAllIn ? '<div class="seat-allin">全下</div>' : ''}
-          ${isFolded ? '<div class="seat-folded">弃牌</div>' : ''}
+          ${isAllIn ? '<div class="seat-allin">All-In</div>' : ''}
+          ${isFolded ? '<div class="seat-folded">Folded</div>' : ''}
           ${handDisplay ? `<div class="seat-hand">${handDisplay}</div>` : ''}
         </div>
       `;
@@ -322,11 +332,14 @@ registerPage('game', (container, { room, gameState, myName }) => {
     }
 
     const sliderEl = document.getElementById('raise-slider');
+    const inputEl = document.getElementById('raise-input');
     const minRaise = state.currentBet * 2 || 20;
     sliderEl.min = minRaise;
     sliderEl.max = myChips + (myState?.bet || 0);
     sliderEl.value = minRaise;
-    document.getElementById('raise-value').textContent = minRaise;
+    inputEl.min = minRaise;
+    inputEl.max = myChips + (myState?.bet || 0);
+    inputEl.value = minRaise;
   }
 
   function showGameResult(winners, hands, isGameOver) {
@@ -339,7 +352,7 @@ registerPage('game', (container, { room, gameState, myName }) => {
     nextBtn.parentNode.replaceChild(newBtn, nextBtn);
 
     if (isGameOver) {
-      newBtn.textContent = '游戏结束 - 返回大厅';
+      newBtn.textContent = 'Game Over - Return to Lobby';
       newBtn.className = 'btn btn-danger';
       newBtn.addEventListener('click', () => {
         overlay.classList.add('hidden');
@@ -347,17 +360,17 @@ registerPage('game', (container, { room, gameState, myName }) => {
         socket.emit('leave-room', () => navigateTo('lobby'));
       });
     } else {
-      newBtn.textContent = '下一局';
+      newBtn.textContent = 'Next Round';
       newBtn.className = 'btn btn-primary';
       newBtn.addEventListener('click', () => {
         overlay.classList.add('hidden');
         socket.emit('next-round', (res) => {
-          if (!res.success) showToast(`错误: ${res.error}`);
+          if (!res.success) showToast(`Error: ${res.error}`);
         });
       });
     }
 
-    const winnerNames = winners.map(w => `${w.name} 赢得 $${w.amount}`).join('，');
+    const winnerNames = winners.map(w => `${w.name} wins $${w.amount}`).join(', ');
     title.innerHTML = `🏆 ${winnerNames}`;
 
     let html = winners.map(w => `
@@ -371,7 +384,7 @@ registerPage('game', (container, { room, gameState, myName }) => {
     // Add community cards if they exist
     if (currentState && currentState.communityCards && currentState.communityCards.length > 0) {
       html += '<div class="result-divider"></div>';
-      html += '<div class="result-community-label" style="text-align:center; color:var(--text-secondary); font-size:0.9rem; margin-bottom:8px;">共用牌</div>';
+      html += '<div class="result-community-label" style="text-align:center; color:var(--text-secondary); font-size:0.9rem; margin-bottom:8px;">Community Cards</div>';
       html += '<div class="result-community-cards" style="display:flex; justify-content:center; gap:8px; margin-bottom:15px;">';
       html += currentState.communityCards.map(c => `
         <span class="card card-mini ${getCardColor(c.suit)}">${c.rank}${getSuitSymbol(c.suit)}</span>
@@ -385,7 +398,7 @@ registerPage('game', (container, { room, gameState, myName }) => {
         const player = currentState.players.find(p => p.id === playerId);
         html += `
           <div class="result-hand-row">
-            <span>${player?.name || '未知'}</span>
+            <span>${player?.name || 'Unknown'}</span>
             <div class="result-cards">
               ${hand.map(c => `<span class="card card-mini ${getCardColor(c.suit)}">${c.rank}${getSuitSymbol(c.suit)}</span>`).join(' ')}
             </div>
@@ -413,7 +426,7 @@ registerPage('game', (container, { room, gameState, myName }) => {
 
       barEl.style.width = `${pct}%`;
       barEl.className = `timer-bar ${pct < 33 ? 'timer-danger' : pct < 66 ? 'timer-warn' : ''}`;
-      textEl.textContent = `${Math.ceil(remaining / 1000)}秒`;
+      textEl.textContent = `${Math.ceil(remaining / 1000)}s`;
 
       if (remaining <= 0) {
         clearInterval(timerInterval);
@@ -436,7 +449,7 @@ registerPage('game', (container, { room, gameState, myName }) => {
     document.getElementById('action-panel')?.classList.add('action-panel-hidden');
     socket.emit('player-action', { type, amount }, (res) => {
       if (!res.success) {
-        showToast(`错误: ${res.error}`);
+        showToast(`Error: ${res.error}`);
         document.getElementById('action-panel')?.classList.remove('action-panel-hidden');
       }
     });

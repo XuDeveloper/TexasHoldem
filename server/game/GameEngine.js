@@ -169,7 +169,14 @@ export class GameEngine {
             }
 
             case 'raise': {
-                const raiseTotal = action.amount;
+                if (typeof action.amount !== 'number' || isNaN(action.amount) || action.amount <= 0) {
+                    throw new Error('Invalid raise amount');
+                }
+                if (action.amount % 5 !== 0) {
+                    throw new Error('Raise amount must be a multiple of 5');
+                }
+
+                const raiseTotal = action.amount; // This is the total bet the player wants to make
                 if (raiseTotal <= this.currentBet) {
                     throw new Error('Raise must be greater than current bet');
                 }

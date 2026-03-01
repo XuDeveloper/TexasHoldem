@@ -47,18 +47,30 @@ function getPreflopStrength(hand) {
  */
 export function decideAction(hand, communityCards, gameState, playerId) {
     const validActions = getValidActionsForAI(gameState, playerId);
-    const random = Math.random();
+
+    const player = gameState.players.find(p => p.id === playerId);
+    const isConservative = player && player.personality === 'conservative';
+
+    // Scale random down for conservative players so they bluff less / fold more easily
+    let random = Math.random();
+    if (isConservative) {
+        random = random * 0.5; // Halve the randomness -> more predictable, tighter play
+    }
 
     // Pre-flop decision
     if (communityCards.length === 0) {
-        return decidePreflopAction(hand, gameState, playerId, validActions, random);
+        return decidePreflopAction(hand, gameState, playerId, validActions, random, isConservative);
     }
 
     // Post-flop decision
-    return decidePostflopAction(hand, communityCards, gameState, playerId, validActions, random);
+    return decidePostflopAction(hand, communityCards, gameState, playerId, validActions, random, isConservative);
 }
 
-function decidePreflopAction(hand, gameState, playerId, validActions, random) {
+function roundToFive(val) {
+    return Math.max(5, Math.floor(val / 5) * 5);
+}
+
+function decidePreflopAction(hand, gameState, playerId, validActions, random, isConservative) {
     const strength = getPreflopStrength(hand);
     const currentBet = gameState.currentBet;
     const playerState = gameState.playerStates.find(ps => ps.id === playerId);
@@ -68,14 +80,14 @@ function decidePreflopAction(hand, gameState, playerId, validActions, random) {
         case 'premium':
             // Always raise with premium hands
             if (validActions.includes('raise')) {
-                return { type: 'raise', amount: Math.min(currentBet * 3 || 30, getChips(gameState, playerId)) };
+                return { type: 'raise', amount: roundToFive(Math.min(currentBet * 3 || 30, getChips(gameState, playerId))) };
             }
             return { type: 'call' };
 
         case 'strong':
             // Usually raise, sometimes call
             if (random < 0.7 && validActions.includes('raise')) {
-                return { type: 'raise', amount: Math.min(currentBet * 2.5 || 25, getChips(gameState, playerId)) };
+                return { type: 'raise', amount: roundToFive(Math.min(currentBet * 2.5 || 25, getChips(gameState, playerId))) };
             }
             return { type: 'call' };
 
@@ -84,6 +96,12 @@ function decidePreflopAction(hand, gameState, playerId, validActions, random) {
             if (toCall > 40) {
                 return random < 0.3 ? { type: 'call' } : { type: 'fold' };
             }
+
+            // Conservative players rarely raise medium hands
+            if (!isConservative && random < 0.2 && validActions.includes('raise')) {
+                return { type: 'raise', amount: roundToFive(Math.min(currentBet * 2 || 20, getChips(gameState, playerId))) };
+            }
+
             if (validActions.includes('check')) return { type: 'check' };
             return { type: 'call' };
 
@@ -91,12 +109,15 @@ function decidePreflopAction(hand, gameState, playerId, validActions, random) {
         default:
             // Fold most of the time, occasionally limp
             if (validActions.includes('check')) return { type: 'check' };
-            if (toCall <= 10 && random < 0.3) return { type: 'call' };
+
+            // Conservative players fold weak hands more often
+            const callThreshold = isConservative ? 0.1 : 0.3;
+            if (toCall <= 10 && random < callThreshold) return { type: 'call' };
             return { type: 'fold' };
     }
 }
 
-function decidePostflopAction(hand, communityCards, gameState, playerId, validActions, random) {
+function decidePostflopAction(hand, communityCards, gameState, playerId, validActions, random, isConservative) {
     // Evaluate current hand
     const allCards = [...hand, ...communityCards];
     const evaluation = evaluateHand(allCards);
@@ -110,7 +131,7 @@ function decidePostflopAction(hand, communityCards, gameState, playerId, validAc
         // Very strong (flush or better): raise/bet aggressively
         if (evaluation.rank >= HandRank.FLUSH) {
             if (random < 0.8 && validActions.includes('raise')) {
-                return { type: 'raise', amount: Math.min(currentBet * 2 + 20, chips) };
+                return { type: 'raise', amount: roundToFive(Math.min(currentBet * 2 + 20, chips)) };
             }
             if (validActions.includes('allin') && evaluation.rank >= HandRank.FULL_HOUSE && random < 0.5) {
                 return { type: 'allin' };
@@ -120,7 +141,7 @@ function decidePostflopAction(hand, communityCards, gameState, playerId, validAc
 
         // Medium-strong (two pair, trips): raise moderately
         if (random < 0.6 && validActions.includes('raise')) {
-            return { type: 'raise', amount: Math.min(currentBet + 20, chips) };
+            return { type: 'raise', amount: roundToFive(Math.min(currentBet + 20, chips)) };
         }
         if (validActions.includes('check')) return { type: 'check' };
         return { type: 'call' };
@@ -129,11 +150,11 @@ function decidePostflopAction(hand, communityCards, gameState, playerId, validAc
     // One pair
     if (evaluation.rank === HandRank.ONE_PAIR) {
         if (toCall > chips * 0.3) {
-            return random < 0.2 ? { type: 'call' } : { type: 'fold' };
+            return random < (isConservative ? 0.05 : 0.2) ? { type: 'call' } : { type: 'fold' };
         }
         if (validActions.includes('check')) return { type: 'check' };
         if (random < 0.4 && validActions.includes('raise')) {
-            return { type: 'raise', amount: Math.min(currentBet + 10, chips) };
+            return { type: 'raise', amount: roundToFive(Math.min(currentBet + 10, chips)) };
         }
         return { type: 'call' };
     }
@@ -141,10 +162,10 @@ function decidePostflopAction(hand, communityCards, gameState, playerId, validAc
     // High card only
     if (toCall > 20) {
         // Occasional bluff
-        if (random < 0.1 && validActions.includes('raise')) {
-            return { type: 'raise', amount: Math.min(currentBet * 2, chips) };
+        if (!isConservative && random < 0.1 && validActions.includes('raise')) {
+            return { type: 'raise', amount: roundToFive(Math.min(currentBet * 2, chips)) };
         }
-        return random < 0.15 ? { type: 'call' } : { type: 'fold' };
+        return random < (isConservative ? 0.05 : 0.15) ? { type: 'call' } : { type: 'fold' };
     }
 
     if (validActions.includes('check')) return { type: 'check' };
