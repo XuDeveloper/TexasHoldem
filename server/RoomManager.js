@@ -43,6 +43,7 @@ export class RoomManager {
             status: 'waiting',
             game: null,
             aiCounter: 0,
+            confirmedPlayers: new Set(),
         };
         this.rooms.set(code, room);
         return room;
@@ -70,6 +71,17 @@ export class RoomManager {
         };
         room.players.push(player);
         return room;
+    }
+
+    /**
+     * Add a player's confirmation for next round.
+     */
+    confirmPlayer(roomId, playerId) {
+        const room = this.rooms.get(roomId);
+        if (!room) throw new Error('Room not found');
+        room.confirmedPlayers.add(playerId);
+        const required = room.players.filter(p => !p.isAI).length;
+        return { confirmed: room.confirmedPlayers.size, required };
     }
 
     /**
@@ -185,6 +197,8 @@ export class RoomManager {
     nextRound(code) {
         const room = this.rooms.get(code);
         if (!room || !room.game) throw new Error('No active game');
+
+        room.confirmedPlayers.clear();
 
         // Remove players with 0 chips
         const bustedPlayers = room.players.filter(p => p.chips <= 0);
