@@ -279,14 +279,17 @@ function broadcastGameState(io, room) {
         if (!sockets) continue;
 
         const state = room.game.getStateForPlayer(player.id);
-        // Send hand privately
+
+        // Emit game-state first to trigger client page transition
+        io.to(player.id).emit('game-state', state);
+
+        // Send hand privately second, after client has mounted the game view
         const playerState = room.game.playerStates.find(ps => ps.id === player.id);
         if (playerState && playerState.hand.length > 0) {
             io.to(player.id).emit('deal-hand', {
                 hand: playerState.hand.map(c => c.toJSON()),
             });
         }
-        io.to(player.id).emit('game-state', state);
     }
 }
 
@@ -341,6 +344,7 @@ function scheduleAIAction(io, room) {
                 room.game.handleAction(currentPlayer.id, { type: 'fold' });
                 broadcastGameState(io, room);
                 scheduleAIAction(io, room);
+                startTurnTimer(io, room); // CRITICAL: Timer must restart for the next player!
             } catch (e) {
                 console.error('AI fallback error:', e.message);
             }

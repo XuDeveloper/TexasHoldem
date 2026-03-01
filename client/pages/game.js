@@ -10,6 +10,7 @@ registerPage('game', (container, { room, gameState, myName }) => {
   let showdownHands = {};
   let timerInterval = null;
   let renderedCardCount = 0;
+  let previousGameState = null;
 
   container.innerHTML = `
     <div class="game-container">
@@ -110,11 +111,90 @@ registerPage('game', (container, { room, gameState, myName }) => {
     </div>
   `;
 
+  // Inject Chat Drawer HTML
+  const chatHTML = `
+      <!-- Floating Action Button -->
+      <div id="chat-fab" class="chat-fab" style="display: none;">
+          💬 <span id="chat-badge" class="unread-badge" style="display: none;">0</span>
+      </div>
+
+      <!-- Slide-out Drawer -->
+      <div id="chat-drawer" class="chat-drawer">
+          <div class="chat-header">
+              <h3>🗨️ Game Chat</h3>
+              <button id="close-chat-btn">×</button>
+          </div>
+          <ul id="chat-messages" class="chat-messages"></ul>
+          <div class="quick-replies">
+              <button class="quick-reply-btn">Nice hand!</button>
+              <button class="quick-reply-btn">Hurry up!</button>
+              <button class="quick-reply-btn">Are you bluffing?</button>
+              <button class="quick-reply-btn">All in time 🔥</button>
+          </div>
+          <div class="chat-input-area">
+              <input type="text" id="chat-input" placeholder="Type a message..." autocomplete="off" />
+              <button id="chat-send-btn">Send</button>
+          </div>
+      </div>
+  `;
+  container.insertAdjacentHTML('beforeend', chatHTML);
+
+  // Bind Chat UI Toggles
+  document.getElementById('chat-fab').addEventListener('click', () => {
+    document.getElementById('chat-drawer').classList.add('open');
+    document.getElementById('chat-badge').style.display = 'none';
+    document.getElementById('chat-badge').textContent = '0';
+  });
+
+  document.getElementById('close-chat-btn').addEventListener('click', () => {
+    document.getElementById('chat-drawer').classList.remove('open');
+  });
+
+  // Bind Chat Input logic
+  document.getElementById('chat-send-btn').addEventListener('click', () => {
+    const input = document.getElementById('chat-input');
+    sendChat(input.value);
+    input.value = '';
+  });
+
+  document.getElementById('chat-input').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') document.getElementById('chat-send-btn').click();
+  });
+
+  document.querySelectorAll('.quick-reply-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      sendChat(e.target.textContent);
+    });
+  });
+
+  // Show FAB
+  document.getElementById('chat-fab').style.display = 'flex';
+
   // ---- Initial Render ----
   updateGameDisplay(currentState);
 
   // ---- Socket Events ----
   socket.on('game-state', (state) => {
+
+    // Log Activity Diffs safely
+    if (previousGameState) {
+      // Phase Changes - ensure state.phase is a valid string before operating on it
+      if (typeof state.phase === 'string' && state.phase !== previousGameState.phase) {
+        const phaseName = state.phase.charAt(0).toUpperCase() + state.phase.slice(1);
+        appendChatMessage('System', `The ${phaseName} phase has begun.`, true);
+      }
+
+      // Action Completes
+      if (state.lastAction &&
+        (!previousGameState.lastAction ||
+          JSON.stringify(state.lastAction) !== JSON.stringify(previousGameState.lastAction))) {
+        appendChatMessage('System', `Action: ${state.lastAction.type} ` + (state.lastAction.amount ? `$${state.lastAction.amount}` : ''), true);
+      }
+    }
+
+    // Deep copy State safely
+    previousGameState = state ? JSON.parse(JSON.stringify(state)) : null;
+
     currentState = state;
     updateGameDisplay(state);
   });
@@ -127,6 +207,13 @@ registerPage('game', (container, { room, gameState, myName }) => {
   socket.on('game-result', ({ winners, hands, communityCards, isGameOver }) => {
     showdownHands = hands;
     showGameResult(winners, hands, isGameOver);
+
+    // Log Winners
+    if (winners && winners.length > 0) {
+      winners.forEach(w => {
+        appendChatMessage('System', `${w.name} wins $${w.amount} with ${w.handName || 'best hand'}`, true);
+      });
+    }
   });
 
   socket.on('turn-timer', ({ playerId, duration }) => {
@@ -144,8 +231,18 @@ registerPage('game', (container, { room, gameState, myName }) => {
     navigateTo('lobby');
   });
 
-  socket.on('chat-message', ({ name, message }) => {
-    showToast(`${name}: ${message}`);
+  socket.on('chat-message', (data) => {
+    showToast(`${data.name}: ${data.message}`);
+    appendChatMessage(data.name, data.message);
+
+    // Increment unread badge if drawer is closed
+    const drawer = document.getElementById('chat-drawer');
+    if (drawer && !drawer.classList.contains('open')) {
+      const badge = document.getElementById('chat-badge');
+      let count = parseInt(badge.textContent) || 0;
+      badge.textContent = count + 1;
+      badge.style.display = 'block';
+    }
   });
 
   // ---- Action Buttons ----
@@ -211,6 +308,28 @@ registerPage('game', (container, { room, gameState, myName }) => {
   });
 
   // ---- Display Functions ----
+
+  // ---- Chat Helper Methods ----
+  function appendChatMessage(author, text, isSystem = false) {
+    const list = document.getElementById('chat-messages');
+    if (!list) return;
+
+    const li = document.createElement('li');
+    if (isSystem) {
+      li.className = 'sys-log';
+      li.textContent = `[System] ${text}`;
+    } else {
+      li.className = 'chat-msg';
+      li.innerHTML = `<span class="author">${author}:</span> ${text}`;
+    }
+    list.appendChild(li);
+    list.scrollTop = list.scrollHeight;
+  }
+
+  function sendChat(msg) {
+    if (!msg.trim()) return;
+    socket.emit('chat-message', { message: msg.trim() });
+  }
 
   function updateGameDisplay(state) {
     const phaseEl = document.getElementById('game-phase');

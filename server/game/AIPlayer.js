@@ -188,7 +188,12 @@ function getValidActionsForAI(gameState, playerId) {
     } else {
         actions.push('call');
     }
-    actions.push('raise');
+
+    const player = gameState.players.find(p => p.id === playerId);
+    if (player && player.chips > gameState.currentBet - playerState.bet) {
+        actions.push('raise');
+    }
+
     actions.push('allin');
     return actions;
 }
