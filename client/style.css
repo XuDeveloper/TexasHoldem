@@ -530,6 +530,38 @@ input {
   margin-bottom: var(--spacing-lg);
 }
 
+/* Waiting Room Chat */
+.chat-section {
+  border-top: var(--border-subtle);
+  padding-top: var(--spacing-md);
+}
+
+.chat-section .chat-messages {
+  max-height: 150px;
+  overflow-y: auto;
+  margin-bottom: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-sm);
+  min-height: 60px;
+}
+
+.chat-section .chat-msg {
+  font-size: 0.85rem;
+  padding: 4px 0;
+}
+
+.chat-input-row {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: stretch;
+}
+
+.chat-input {
+  flex: 1;
+  padding: 8px 12px;
+}
+
 
 
 /* ==============================
