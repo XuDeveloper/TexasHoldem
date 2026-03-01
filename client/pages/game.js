@@ -12,6 +12,7 @@ registerPage('game', (container, { room, gameState, myName }) => {
   let nextRoundInterval = null;
   let renderedCardCount = 0;
   let previousGameState = null;
+  let amIConfirmed = false;
 
   container.innerHTML = `
     <div class="game-container">
@@ -197,6 +198,7 @@ registerPage('game', (container, { room, gameState, myName }) => {
     previousGameState = state ? JSON.parse(JSON.stringify(state)) : null;
 
     currentState = state;
+    if (state.phase === 'preflop') amIConfirmed = false;
     updateGameDisplay(state);
   });
 
@@ -205,9 +207,9 @@ registerPage('game', (container, { room, gameState, myName }) => {
     renderMyHand(hand);
   });
 
-  socket.on('game-result', ({ winners, hands, communityCards, isGameOver }) => {
+  socket.on('game-result', ({ winners, hands, communityCards, isGameOver, nextRoundStatus }) => {
     showdownHands = hands;
-    showGameResult(winners, hands, isGameOver);
+    showGameResult(winners, hands, isGameOver, nextRoundStatus);
 
     // Log Winners
     if (winners && winners.length > 0) {
@@ -225,6 +227,14 @@ registerPage('game', (container, { room, gameState, myName }) => {
 
   socket.on('room-update', (updatedRoom) => {
     currentRoom = updatedRoom;
+  });
+
+  socket.on('next-round-status', (status) => {
+    const btn = document.getElementById('btn-next-round');
+    if (btn && !document.getElementById('game-result').classList.contains('hidden')) {
+      const isHost = currentRoom.hostId === socket.id;
+      renderNextRoundButton(btn, isHost, status);
+    }
   });
 
   socket.on('game-ended', () => {
@@ -462,7 +472,7 @@ registerPage('game', (container, { room, gameState, myName }) => {
     inputEl.value = minRaise;
   }
 
-  function showGameResult(winners, hands, isGameOver) {
+  function showGameResult(winners, hands, isGameOver, nextRoundStatus) {
     const overlay = document.getElementById('game-result');
     const title = document.getElementById('result-title');
     const handsEl = document.getElementById('result-hands');
@@ -481,29 +491,9 @@ registerPage('game', (container, { room, gameState, myName }) => {
         socket.emit('leave-room', () => navigateTo('lobby'));
       });
     } else {
-      let countdown = 20;
-      newBtn.textContent = `Next Round (${countdown}s)`;
-      newBtn.className = 'btn btn-primary';
-
-      const triggerNextRound = () => {
-        clearInterval(nextRoundInterval);
-        overlay.classList.add('hidden');
-        socket.emit('next-round', (res) => {
-          if (!res.success) showToast(`Error: ${res.error}`);
-        });
-      };
-
-      newBtn.addEventListener('click', triggerNextRound);
-
-      clearInterval(nextRoundInterval);
-      nextRoundInterval = setInterval(() => {
-        countdown--;
-        if (countdown > 0) {
-          newBtn.textContent = `Next Round (${countdown}s)`;
-        } else {
-          triggerNextRound();
-        }
-      }, 1000);
+      const isHost = currentRoom.hostId === socket.id;
+      const initialStatus = nextRoundStatus || { confirmed: 0, required: currentRoom.players.filter(p => !p.isAI).length };
+      renderNextRoundButton(newBtn, isHost, initialStatus);
     }
 
     const winnerNames = winners.map(w => `${w.name} wins $${w.amount}`).join(', ');
@@ -545,6 +535,65 @@ registerPage('game', (container, { room, gameState, myName }) => {
 
     handsEl.innerHTML = html;
     overlay.classList.remove('hidden');
+  }
+
+  function renderNextRoundButton(btn, isHost, status) {
+    if (!status) return;
+
+    if (status.required <= 1 && isHost) {
+      btn.textContent = 'Next Round';
+      btn.className = 'btn btn-primary';
+      btn.disabled = false;
+      btn.onclick = () => {
+        document.getElementById('game-result').classList.add('hidden');
+        socket.emit('next-round', (res) => {
+          if (!res.success) showToast(`Error: ${res.error}`);
+        });
+      };
+      return;
+    }
+
+    if (status.confirmed >= status.required) {
+      if (isHost) {
+        btn.textContent = 'Next Round';
+        btn.className = 'btn btn-primary';
+        btn.disabled = false;
+        btn.onclick = () => {
+          document.getElementById('game-result').classList.add('hidden');
+          socket.emit('next-round', (res) => {
+            if (!res.success) showToast(`Error: ${res.error}`);
+          });
+        };
+      } else {
+        btn.textContent = 'Waiting for Host...';
+        btn.className = 'btn btn-secondary';
+        btn.disabled = true;
+        btn.onclick = null;
+      }
+    } else {
+      if (amIConfirmed) {
+        btn.textContent = `Confirmed (${status.confirmed}/${status.required})`;
+        btn.className = 'btn btn-secondary';
+        btn.disabled = true;
+        btn.onclick = null; // Wait for status update
+      } else {
+        btn.textContent = `Confirm (${status.confirmed}/${status.required})`;
+        btn.className = 'btn btn-primary';
+        btn.disabled = false;
+        btn.onclick = () => {
+          btn.disabled = true;
+          socket.emit('confirm-next-round', (res) => {
+            if (res.success) {
+              amIConfirmed = true;
+              renderNextRoundButton(btn, isHost, res.status);
+            } else {
+              btn.disabled = false;
+              showToast(`Error: ${res.error}`);
+            }
+          });
+        };
+      }
+    }
   }
 
   function startTimer(duration) {
