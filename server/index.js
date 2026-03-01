@@ -51,17 +51,12 @@ httpServer.listen(PORT, () => {
 function shutdown() {
     console.log('\n🛑 正在关闭服务器...');
     io.emit('server-shutdown', { message: '服务器即将关闭' });
-    io.close(() => {
-        httpServer.close(() => {
-            console.log('✅ 服务器已关闭');
-            process.exit(0);
-        });
-    });
-    // Force exit after 3s if graceful shutdown stalls
+
+    // Force close to avoid hanging on active connections
     setTimeout(() => {
-        console.log('⚠️  强制关闭');
-        process.exit(1);
-    }, 3000);
+        console.log('✅ 服务器已关闭');
+        process.exit(0);
+    }, 100);
 }
 
 // Listen for shutdown commands from stdin

@@ -96,6 +96,9 @@ export class RoomManager {
             aggressiveness: aggressiveness,
         };
         room.players.push(ai);
+
+        console.log(`[AI Spawn] Room ${code} | Name: ${aiName} | Aggressiveness: ${aggressiveness.toFixed(2)} (${aggressiveness < 0.3 ? 'Conservative' : aggressiveness > 0.7 ? 'Aggressive' : 'Balanced'})`);
+
         return room;
     }
 
