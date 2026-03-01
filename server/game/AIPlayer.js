@@ -56,6 +56,9 @@ export function decideAction(hand, communityCards, gameState, playerId) {
     // Helper to interpolate probability between conservative min and aggressive max
     const getProb = (min, max) => min + (max - min) * aggressiveness;
 
+    // Log for local debugging
+    console.log(`[AI Debug] ${player?.name || playerId} | Aggr: ${aggressiveness.toFixed(2)} | Random Roll: ${random.toFixed(2)}`);
+
     // Pre-flop decision
     if (communityCards.length === 0) {
         return decidePreflopAction(hand, gameState, playerId, validActions, random, getProb);
