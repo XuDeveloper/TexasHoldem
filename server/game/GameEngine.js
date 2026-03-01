@@ -258,8 +258,27 @@ export class GameEngine {
             ps => ps.status === PlayerStatus.ACTIVE
         );
 
-        // If 0 or 1 active players, round is complete
-        if (activePlayers.length <= 1) return true;
+        const allInPlayers = this.playerStates.filter(
+            ps => ps.status === PlayerStatus.ALLIN
+        );
+
+        // If 0 active players (everyone all-in or folded), round is clearly complete
+        if (activePlayers.length === 0) return true;
+
+        // If 1 active player, they might still need to call a bet from an all-in player
+        if (activePlayers.length === 1) {
+            const activePlayer = activePlayers[0];
+            // Do they need to call the current bet?
+            if (activePlayer.bet < this.currentBet) {
+                // They haven't called the bet yet, so the round is NOT complete.
+                // But wait, what if they've already acted and we're just checking?
+                // Actually, if their bet < currentBet, they MUST act.
+                return false;
+            }
+            // If they have matched the bet (or it's a check round and they already acted),
+            // and there are no other active players, the round is complete.
+            return activePlayer.hasActed || activePlayer.bet === this.currentBet && allInPlayers.length > 0;
+        }
 
         // All active players must have acted AND matched the current bet
         return activePlayers.every(ps => ps.hasActed && ps.bet === this.currentBet);
@@ -296,7 +315,8 @@ export class GameEngine {
                 return this.showdown();
         }
 
-        // If less than 2 players can act, skip to showdown by dealing remaining cards
+        // We only skip to showdown if less than 2 players can act AND the betting round is fully resolved
+        // (which is implicitly true since we only reach here when isBettingRoundComplete() is true)
         if (canAct.length < 2) {
             return this.dealRemainingAndShowdown();
         }
