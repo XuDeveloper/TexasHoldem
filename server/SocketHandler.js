@@ -120,6 +120,19 @@ export function setupSocketHandler(io) {
             }
         });
 
+        socket.on('confirm-next-round', (callback) => {
+            try {
+                const room = roomManager.findRoomByPlayer(socket.id);
+                if (!room) throw new Error('Not in a room');
+
+                const status = roomManager.confirmPlayer(room.id, socket.id);
+                io.to(room.id).emit('next-round-status', status);
+                callback({ success: true, status });
+            } catch (err) {
+                if (callback) callback({ success: false, error: err.message });
+            }
+        });
+
         socket.on('next-round', (callback) => {
             try {
                 const room = roomManager.findRoomByPlayer(socket.id);
@@ -390,12 +403,14 @@ function handleShowdown(io, room) {
     }
 
     const isGameOver = room.players.some(p => p.chips <= 0);
+    const realCount = room.players.filter(p => !p.isAI).length;
 
     io.to(room.id).emit('game-result', {
         winners: state.winners,
         hands,
         communityCards: state.communityCards,
         isGameOver,
+        nextRoundStatus: { confirmed: room.confirmedPlayers.size, required: realCount },
     });
 }
 
