@@ -9,6 +9,7 @@ registerPage('game', (container, { room, gameState, myName }) => {
   let currentRoom = room;
   let showdownHands = {};
   let timerInterval = null;
+  let nextRoundInterval = null;
   let renderedCardCount = 0;
   let previousGameState = null;
 
@@ -474,19 +475,35 @@ registerPage('game', (container, { room, gameState, myName }) => {
       newBtn.textContent = 'Game Over - Return to Lobby';
       newBtn.className = 'btn btn-danger';
       newBtn.addEventListener('click', () => {
+        clearInterval(nextRoundInterval);
         overlay.classList.add('hidden');
         cleanupListeners();
         socket.emit('leave-room', () => navigateTo('lobby'));
       });
     } else {
-      newBtn.textContent = 'Next Round';
+      let countdown = 20;
+      newBtn.textContent = `Next Round (${countdown}s)`;
       newBtn.className = 'btn btn-primary';
-      newBtn.addEventListener('click', () => {
+
+      const triggerNextRound = () => {
+        clearInterval(nextRoundInterval);
         overlay.classList.add('hidden');
         socket.emit('next-round', (res) => {
           if (!res.success) showToast(`Error: ${res.error}`);
         });
-      });
+      };
+
+      newBtn.addEventListener('click', triggerNextRound);
+
+      clearInterval(nextRoundInterval);
+      nextRoundInterval = setInterval(() => {
+        countdown--;
+        if (countdown > 0) {
+          newBtn.textContent = `Next Round (${countdown}s)`;
+        } else {
+          triggerNextRound();
+        }
+      }, 1000);
     }
 
     const winnerNames = winners.map(w => `${w.name} wins $${w.amount}`).join(', ');
@@ -576,6 +593,7 @@ registerPage('game', (container, { room, gameState, myName }) => {
 
   function cleanupListeners() {
     clearInterval(timerInterval);
+    clearInterval(nextRoundInterval);
     socket.off('game-state');
     socket.off('deal-hand');
     socket.off('game-result');
