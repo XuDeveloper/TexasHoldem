@@ -459,6 +459,7 @@ export class GameEngine {
                 name: p.name,
                 chips: p.chips,
                 isAI: p.isAI,
+                aggressiveness: p.aggressiveness,
             })),
             winners: this.winners,
             lastAction: this.lastAction,
