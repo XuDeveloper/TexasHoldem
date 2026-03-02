@@ -1,12 +1,27 @@
 {
   "admin": {
     "passwordHash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
-    "name": "Administrator",
-    "createdAt": "2026-02-28T14:14:56.080Z"
+    "name": "Admin Boss",
+    "createdAt": "2026-03-02T14:51:37.367Z"
   },
   "testuser": {
     "passwordHash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
     "name": "Test User",
     "createdAt": "2026-03-01T15:29:27.283Z"
+  },
+  "user1": {
+    "passwordHash": "bcb15f821479b4d5772bd0ca866c00ad5f926e3580720659cc80d39c9d09802a",
+    "name": "Player 1",
+    "createdAt": "2026-03-02T14:51:37.663Z"
+  },
+  "user2": {
+    "passwordHash": "4cc8f4d609b717356701c57a03e737e5ac8fe885da8c7163d3de47e01849c635",
+    "name": "Player 2",
+    "createdAt": "2026-03-02T14:51:37.954Z"
+  },
+  "test": {
+    "passwordHash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+    "name": "Test Account",
+    "createdAt": "2026-03-02T14:51:38.250Z"
   }
 }
