@@ -1209,6 +1209,11 @@ input {
     font-size: 0.8rem;
   }
 
+  .card-placeholder {
+    width: 40px;
+    height: 56px;
+  }
+
   .card-large {
     width: 56px;
     height: 78px;
@@ -1230,6 +1235,15 @@ input {
     min-width: 65px;
     padding: 8px 12px;
     font-size: 0.8rem;
+  }
+
+  /* Reposition chat icon on mobile to avoid overlapping avatars */
+  .chat-fab {
+    top: 65px;
+    transform: none;
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
   }
 }
 
