@@ -136,6 +136,11 @@ export class RoomManager {
             room.hostId = newHost.id;
         }
 
+        // If the player who had the easter egg disconnected entirely, clear it
+        if (room.activeEasterEgg && room.activeEasterEgg.playerId === playerId) {
+            room.activeEasterEgg = null;
+        }
+
         return room;
     }
 
@@ -167,6 +172,9 @@ export class RoomManager {
             if (room.hostId === oldPlayerId) {
                 room.hostId = newPlayerId;
             }
+            if (room.activeEasterEgg && room.activeEasterEgg.playerId === oldPlayerId) {
+                room.activeEasterEgg.playerId = newPlayerId;
+            }
         }
         return room;
     }
@@ -185,7 +193,12 @@ export class RoomManager {
             ? (room.game.dealerIndex + 1) % room.players.length
             : 0;
 
-        room.game = new GameEngine(room.players, { dealerIndex });
+        const options = { dealerIndex };
+        if (room.activeEasterEgg) {
+            options.easterEgg = room.activeEasterEgg;
+        }
+
+        room.game = new GameEngine(room.players, options);
         const state = room.game.startRound();
 
         return { room, gameState: state };
@@ -212,7 +225,12 @@ export class RoomManager {
         }
 
         const dealerIndex = (room.game.dealerIndex + 1) % activePlayers.length;
-        room.game = new GameEngine(activePlayers, { dealerIndex });
+        const options = { dealerIndex };
+        if (room.activeEasterEgg) {
+            options.easterEgg = room.activeEasterEgg;
+        }
+
+        room.game = new GameEngine(activePlayers, options);
         const state = room.game.startRound();
 
         return { room, gameState: state, ended: false };

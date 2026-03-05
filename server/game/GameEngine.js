@@ -40,6 +40,7 @@ export class GameEngine {
         this.playerStates = [];
         this.winners = null;
         this.lastAction = null;
+        this.easterEgg = options.easterEgg || null;
     }
 
     /**
@@ -71,9 +72,76 @@ export class GameEngine {
             throw new Error('Need at least 2 players with chips to start');
         }
 
-        // Deal 2 cards to each player
-        for (const ps of this.playerStates) {
-            ps.hand = this.deck.dealMany(2);
+        // Handle Easter Egg
+        if (this.easterEgg) {
+            const { playerId, type } = this.easterEgg;
+            let holeCardsOptions = [];
+            let communityCardsOptions = [];
+
+            if (type === '/royal') {
+                holeCardsOptions = [{ suit: 'hearts', rank: 'A' }, { suit: 'hearts', rank: 'K' }];
+                communityCardsOptions = [{ suit: 'hearts', rank: 'Q' }, { suit: 'hearts', rank: 'J' }, { suit: 'hearts', rank: '10' }];
+            } else if (type === '/sf') {
+                holeCardsOptions = [{ suit: 'spades', rank: '9' }, { suit: 'spades', rank: '8' }];
+                communityCardsOptions = [{ suit: 'spades', rank: '7' }, { suit: 'spades', rank: '6' }, { suit: 'spades', rank: '5' }];
+            } else if (type === '/4k') {
+                holeCardsOptions = [{ suit: 'clubs', rank: 'A' }, { suit: 'diamonds', rank: 'A' }];
+                communityCardsOptions = [{ suit: 'spades', rank: 'A' }, { suit: 'hearts', rank: 'A' }, { suit: 'clubs', rank: '2' }]; // Added a random 2c for the board
+            }
+
+            if (holeCardsOptions.length > 0) {
+                // Combine required cards into a single 5-card pool
+                const requiredCardsOptions = [...holeCardsOptions, ...communityCardsOptions];
+                const requiredCards = requiredCardsOptions.map(c => this.deck.extractCard(c.suit, c.rank)).filter(Boolean);
+
+                // We MUST ensure at least 1 required card goes to the player, 
+                // otherwise all 5 could end up on the board and everyone would have the hand.
+                // Pick 1 random required card for the player first.
+                const firstPlayerCardIndex = Math.floor(Math.random() * requiredCards.length);
+                const firstPlayerCard = requiredCards.splice(firstPlayerCardIndex, 1)[0];
+
+                // Add 2 random cards to make a 6-card pool (4 required + 2 random)
+                const pool = [...requiredCards];
+                while (pool.length < 6) {
+                    pool.push(this.deck.deal());
+                }
+
+                // Shuffle the remaining 6 cards
+                for (let i = pool.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [pool[i], pool[j]] = [pool[j], pool[i]];
+                }
+
+                // Take 1 more card for the player to complete their hole cards
+                const secondPlayerCard = pool.pop();
+                const playerHoleCards = [firstPlayerCard, secondPlayerCard];
+
+                // Remaining 5 cards will be the community board
+                const communityCards = pool;
+
+                for (const ps of this.playerStates) {
+                    if (ps.id === playerId) {
+                        ps.hand = playerHoleCards;
+                    } else {
+                        // Deal normally to other players
+                        ps.hand = this.deck.dealMany(2);
+                    }
+                }
+
+                // Place community cards at the top of the deck so they are drawn next
+                // Reverse the array before pushing so they pop in the expected order
+                communityCards.reverse().forEach(c => this.deck.placeAtTop(c));
+            } else {
+                // Fallback normal deal
+                for (const ps of this.playerStates) {
+                    ps.hand = this.deck.dealMany(2);
+                }
+            }
+        } else {
+            // Deal 2 cards to each player normally
+            for (const ps of this.playerStates) {
+                ps.hand = this.deck.dealMany(2);
+            }
         }
 
         // Post blinds

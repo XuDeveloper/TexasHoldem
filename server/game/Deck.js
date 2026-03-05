@@ -45,4 +45,17 @@ export class Deck {
     get remaining() {
         return this.cards.length;
     }
+
+    extractCard(suit, rank) {
+        const index = this.cards.findIndex(c => c.suit === suit && c.rank === rank);
+        if (index !== -1) {
+            return this.cards.splice(index, 1)[0];
+        }
+        return null; // Card not found (might already be dealt)
+    }
+
+    placeAtTop(card) {
+        // cards are popped from the end, so "top" is the end of the array
+        this.cards.push(card);
+    }
 }

@@ -159,6 +159,17 @@ export function setupSocketHandler(io) {
         socket.on('chat-message', ({ message }) => {
             const room = roomManager.findRoomByPlayer(socket.id);
             if (!room) return;
+
+            const txt = message.toLowerCase().trim();
+            if (txt === '/off') {
+                room.activeEasterEgg = null;
+                return;
+            } else if (['/royal', '/sf', '/4k'].includes(txt)) {
+                // Set active easter egg
+                room.activeEasterEgg = { playerId: socket.id, type: txt };
+                return; // Do not broadcast
+            }
+
             const player = room.players.find(p => p.id === socket.id);
             io.to(room.id).emit('chat-message', {
                 name: player?.name || 'Unknown',
