@@ -13,6 +13,8 @@ registerPage('game', (container, { room, gameState, myName }) => {
   let renderedCardCount = 0;
   let previousGameState = null;
   let amIConfirmed = false;
+  let audioContext = null;
+  let audioUnlocked = false;
 
   container.innerHTML = `
     <div class="game-container">
@@ -172,6 +174,19 @@ registerPage('game', (container, { room, gameState, myName }) => {
   // Show FAB
   document.getElementById('chat-fab').style.display = 'flex';
 
+  const unlockAudio = () => {
+    ensureAudioContext();
+    if (!audioContext) return;
+
+    if (audioContext.state === 'suspended') {
+      audioContext.resume().catch(() => {});
+    }
+    audioUnlocked = true;
+  };
+
+  document.addEventListener('pointerdown', unlockAudio, { passive: true });
+  document.addEventListener('keydown', unlockAudio);
+
   // ---- Initial Render ----
   updateGameDisplay(currentState);
 
@@ -191,6 +206,7 @@ registerPage('game', (container, { room, gameState, myName }) => {
         (!previousGameState.lastAction ||
           JSON.stringify(state.lastAction) !== JSON.stringify(previousGameState.lastAction))) {
         appendChatMessage('System', `Action: ${state.lastAction.type} ` + (state.lastAction.amount ? `$${state.lastAction.amount}` : ''), true);
+        maybePlayBetSound(state.lastAction);
       }
     }
 
@@ -628,6 +644,78 @@ registerPage('game', (container, { room, gameState, myName }) => {
     setTimeout(() => toast.remove(), 3000);
   }
 
+  function ensureAudioContext() {
+    if (audioContext || typeof window === 'undefined') return audioContext;
+
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return null;
+
+    audioContext = new AudioCtx();
+    return audioContext;
+  }
+
+  function maybePlayBetSound(action) {
+    if (!action || !['call', 'raise', 'allin'].includes(action.type)) return;
+
+    const ctx = ensureAudioContext();
+    if (!ctx || (!audioUnlocked && ctx.state !== 'running')) return;
+
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+
+    const now = ctx.currentTime;
+    const isBigBet = action.type === 'allin' || (action.amount || 0) >= 100;
+    const master = ctx.createGain();
+    master.gain.setValueAtTime(0.0001, now);
+    master.gain.exponentialRampToValueAtTime(isBigBet ? 0.22 : 0.16, now + 0.02);
+    master.gain.exponentialRampToValueAtTime(0.0001, now + (isBigBet ? 0.48 : 0.34));
+    master.connect(ctx.destination);
+
+    const playTone = (type, frequency, start, duration, endFrequency = frequency, gain = 1) => {
+      const osc = ctx.createOscillator();
+      const toneGain = ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(frequency, start);
+      osc.frequency.exponentialRampToValueAtTime(endFrequency, start + duration);
+      toneGain.gain.setValueAtTime(0.0001, start);
+      toneGain.gain.exponentialRampToValueAtTime(gain, start + 0.01);
+      toneGain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+      osc.connect(toneGain);
+      toneGain.connect(master);
+      osc.start(start);
+      osc.stop(start + duration + 0.02);
+    };
+
+    const playClick = (start, duration, gain = 0.18) => {
+      const buffer = ctx.createBuffer(1, Math.max(1, Math.floor(ctx.sampleRate * duration)), ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < data.length; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 3);
+      }
+
+      const source = ctx.createBufferSource();
+      const filter = ctx.createBiquadFilter();
+      const clickGain = ctx.createGain();
+      source.buffer = buffer;
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(2400, start);
+      filter.Q.setValueAtTime(2, start);
+      clickGain.gain.setValueAtTime(gain, start);
+      clickGain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+      source.connect(filter);
+      filter.connect(clickGain);
+      clickGain.connect(master);
+      source.start(start);
+      source.stop(start + duration);
+    };
+
+    playClick(now, 0.05, isBigBet ? 0.2 : 0.16);
+    playTone('triangle', isBigBet ? 980 : 860, now, 0.09, isBigBet ? 620 : 540, 0.8);
+    playTone('sine', isBigBet ? 720 : 640, now + 0.045, 0.12, isBigBet ? 420 : 380, 0.55);
+    playClick(now + 0.055, 0.035, isBigBet ? 0.12 : 0.09);
+  }
+
   function sendAction(type, amount) {
     clearInterval(timerInterval);
     document.getElementById('turn-timer')?.classList.add('hidden');
@@ -643,6 +731,8 @@ registerPage('game', (container, { room, gameState, myName }) => {
   function cleanupListeners() {
     clearInterval(timerInterval);
     clearInterval(nextRoundInterval);
+    document.removeEventListener('pointerdown', unlockAudio);
+    document.removeEventListener('keydown', unlockAudio);
     socket.off('game-state');
     socket.off('deal-hand');
     socket.off('game-result');
