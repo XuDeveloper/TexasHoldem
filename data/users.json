@@ -1,4 +1,9 @@
 {
+  "318": {
+    "passwordHash": "2607c8718259147efc758af267f531ed7181f371dd54d3df1dbdcb2fe69b52c9",
+    "name": "318",
+    "createdAt": "2026-03-13T08:33:54.353Z"
+  },
   "admin": {
     "passwordHash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
     "name": "Admin Boss",
