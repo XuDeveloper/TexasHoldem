@@ -258,11 +258,21 @@ export function setupSocketHandler(io) {
 
             socket.leave(room.id);
 
-            // If game is active, auto-fold
             if (room.game) {
                 const state = room.game.getState();
                 if (state.currentPlayerId === socket.id) {
                     autoAct(io, room, socket.id);
+                } else {
+                    const newState = room.game.forceFold(socket.id);
+                    if (newState) {
+                        broadcastGameState(io, room);
+                        if (newState.phase === 'showdown') {
+                            handleShowdown(io, room);
+                        } else {
+                            scheduleAIAction(io, room);
+                            startTurnTimer(io, room);
+                        }
+                    }
                 }
             }
 
@@ -413,7 +423,7 @@ function handleShowdown(io, room) {
         }
     }
 
-    const isGameOver = room.players.some(p => p.chips <= 0);
+    const isGameOver = room.players.filter(p => p.chips > 0).length < 2;
     const realCount = room.players.filter(p => !p.isAI).length;
 
     io.to(room.id).emit('game-result', {

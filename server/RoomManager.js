@@ -213,10 +213,6 @@ export class RoomManager {
 
         room.confirmedPlayers.clear();
 
-        // Remove players with 0 chips
-        const bustedPlayers = room.players.filter(p => p.chips <= 0);
-
-        // Check if enough players to continue
         const activePlayers = room.players.filter(p => p.chips > 0);
         if (activePlayers.length < 2) {
             room.status = 'waiting';
@@ -224,13 +220,28 @@ export class RoomManager {
             return { room, gameState: null, ended: true };
         }
 
-        const dealerIndex = (room.game.dealerIndex + 1) % activePlayers.length;
+        // Calculate new dealer based on original seating order before removing busted players
+        const oldDealerId = room.game.players[room.game.dealerIndex].id;
+        const oldDealerRoomIdx = room.players.findIndex(p => p.id === oldDealerId);
+        let newDealerId = activePlayers[0].id;
+        for (let i = 1; i <= room.players.length; i++) {
+            const p = room.players[(oldDealerRoomIdx + i) % room.players.length];
+            if (p.chips > 0) {
+                newDealerId = p.id;
+                break;
+            }
+        }
+
+        // Remove busted players
+        room.players = activePlayers;
+
+        const dealerIndex = Math.max(0, room.players.findIndex(p => p.id === newDealerId));
         const options = { dealerIndex };
         if (room.activeEasterEgg) {
             options.easterEgg = room.activeEasterEgg;
         }
 
-        room.game = new GameEngine(activePlayers, options);
+        room.game = new GameEngine(room.players, options);
         const state = room.game.startRound();
 
         return { room, gameState: state, ended: false };

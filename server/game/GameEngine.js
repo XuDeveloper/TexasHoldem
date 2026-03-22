@@ -345,7 +345,7 @@ export class GameEngine {
             }
             // If they have matched the bet (or it's a check round and they already acted),
             // and there are no other active players, the round is complete.
-            return activePlayer.hasActed || activePlayer.bet === this.currentBet && allInPlayers.length > 0;
+            return activePlayer.hasActed || (activePlayer.bet === this.currentBet && allInPlayers.length > 0);
         }
 
         // All active players must have acted AND matched the current bet
@@ -390,7 +390,7 @@ export class GameEngine {
         }
 
         // Set current player to first active after dealer
-        this.currentPlayerIndex = this.getNextActiveIndex(this.dealerIndex - 1);
+        this.currentPlayerIndex = this.getNextActiveIndex(this.dealerIndex);
 
         return this.getState();
     }
@@ -564,6 +564,34 @@ export class GameEngine {
             state.hand = ps.hand.map(c => c.toJSON());
         }
         return state;
+    }
+
+    /**
+     * Force-fold a player who left the room (not necessarily the current actor).
+     * Returns the updated game state, or null if the player wasn't active.
+     */
+    forceFold(playerId) {
+        const psIdx = this.playerStates.findIndex(p => p.id === playerId);
+        if (psIdx === -1) return null;
+        const ps = this.playerStates[psIdx];
+        if (ps.status !== PlayerStatus.ACTIVE) return null;
+
+        ps.status = PlayerStatus.FOLDED;
+
+        const remaining = this.playerStates.filter(p => p.status !== PlayerStatus.FOLDED);
+        if (remaining.length === 1) {
+            return this.endRoundByFold(remaining[0]);
+        }
+
+        if (this.currentPlayerIndex === psIdx) {
+            this.currentPlayerIndex = this.getNextActiveIndex(this.currentPlayerIndex);
+        }
+
+        if (this.isBettingRoundComplete()) {
+            return this.advancePhase();
+        }
+
+        return this.getState();
     }
 
     /**
